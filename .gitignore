@@ -1,41 +1,14 @@
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Linker files
-*.ilk
-
-# Debugger Files
-*.pdb
-
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
-
-# debug information files
-*.dwo
+# Ignore build files and IDE/project files
+build/
+Build/
+CMakeBuild*/ 
+cmake-build*/
+*.DS_Store
+*.user
+*.VC.db
+*.vcxproj*
+*.sln
+*.idea/
+.vscode/
+# Ignore JUCE-related build files
+JUCE/extras/AudioPluginHost/Builds/

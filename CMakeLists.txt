@@ -16,11 +16,14 @@ juce_add_plugin(SoftSynth
     NEEDS_MIDI_OUTPUT FALSE
     IS_MIDI_EFFECT FALSE
     EDITOR_WANTS_KEYBOARD_FOCUS FALSE
-    COPY_PLUGIN_AFTER_BUILD TRUE
+    COPY_PLUGIN_AFTER_BUILD FALSE
     VST3_CATEGORIES Instrument Synth
     FORMATS VST3 Standalone
+    VST3_CAN_REPLACE_VST2 FALSE
     PRODUCT_NAME "SoftSynth"
 )
+
+target_compile_definitions(SoftSynth_VST3 PRIVATE JUCE_VST3_CAN_REPLACE_VST2=0)
 
 target_sources(SoftSynth PRIVATE
     src/PluginProcessor.cpp
@@ -31,9 +34,10 @@ target_sources(SoftSynth PRIVATE
 )
 
 target_link_libraries(SoftSynth PRIVATE
-    juce::juce_audio_processors       # <- required for AudioProcessor
+    juce::juce_audio_processors
     juce::juce_audio_utils
     juce::juce_audio_basics
+    juce::juce_audio_devices
     juce::juce_dsp
     juce::juce_core
 )

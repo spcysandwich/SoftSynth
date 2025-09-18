@@ -2,6 +2,9 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_audio_basics/juce_audio_basics.h>
 #include <juce_audio_utils/juce_audio_utils.h>
+#include <algorithm>
+#include <atomic>
+#include <cmath>
 #include "SynthSound.h"
 #include "Oscillator.h"
 
@@ -36,16 +39,18 @@ public:
     void startNote (int midiNoteNumber, float velocity, juce::SynthesiserSound*, int) override {
         const double f = juce::MidiMessage::getMidiNoteInHertz(midiNoteNumber);
         osc.setFrequency(f);
-        osc.setWave( (Wave) (int) (params.wave->load() + 0.5f) );
+        const float waveValue = params.wave ? params.wave->load() : 0.0f;
+        osc.setWave (static_cast<Wave> (juce::jlimit (0, 2, (int) std::round (waveValue))));
 
         juce::ADSR::Parameters ap;
-        ap.attack  = std::max(0.0001f, params.atk->load());
-        ap.decay   = std::max(0.0001f, params.dec->load());
-        ap.sustain = juce::jlimit (0.0f, 1.0f, params.sus->load());
-        ap.release = std::max(0.0001f, params.rel->load());
+        ap.attack  = params.atk ? std::max (0.0001f, params.atk->load()) : 0.01f;
+        ap.decay   = params.dec ? std::max (0.0001f, params.dec->load()) : 0.1f;
+        ap.sustain = params.sus ? juce::jlimit (0.0f, 1.0f, params.sus->load()) : 0.8f;
+        ap.release = params.rel ? std::max (0.0001f, params.rel->load()) : 0.5f;
         adsr.setParameters(ap);
 
-        level = juce::jlimit (0.0f, 1.0f, params.gain->load()) * juce::jlimit (0.0f, 1.0f, velocity);
+        const float gain = params.gain ? params.gain->load() : 0.7f;
+        level = juce::jlimit (0.0f, 1.0f, gain) * juce::jlimit (0.0f, 1.0f, velocity);
         adsr.noteOn();
     }
 
@@ -57,17 +62,20 @@ public:
     void pitchWheelMoved (int) override {}
     void controllerMoved (int, int) override {}
     void renderNextBlock (juce::AudioBuffer<float>& outputBuffer, int startSample, int numSamples) override {
-    void renderNextBlock (juce::AudioBuffer<float>& output, int startSample, int numSamples) override {
-        if (! adsr.isActive()) { clearCurrentNote(); return; }
+        if (! isVoiceActive())
+            return;
+
         for (int i = 0; i < numSamples; ++i) {
             float sample = osc.process();
             sample *= adsr.getNextSample();
             sample *= level;
 
             for (int channel = 0; channel < outputBuffer.getNumChannels(); ++channel)
-                outputBuffer.addSample(channel, startSample + i, sample);
+                outputBuffer.addSample (channel, startSample + i, sample);
         }
-        }
+
+        if (! adsr.isActive())
+            clearCurrentNote();
     }
 
     void reset() {
